@@ -1,5 +1,10 @@
 import os
 from datetime import datetime
+'''
+think about:
+in 4 result column called conformity are we need to write 'Yes' if cdr's are
+exactly equal cause they are semi equal all the time   
+'''
 
 
 class ResultRecord:
@@ -14,7 +19,7 @@ class ResultRecord:
         index - index :))
         type - traffic type misto/ migmisto/ migmisto 800/ migmisto 800 900
                / None
-               ms_cdr - all ms cdr's from what we collect data to this account
+        ms_cdr - all ms cdr's from what we collect data to this account
         availability(najavnist') - tak/ ni / comzal
         conformity(vidpovidnist') - does a filter conndition in ms equal to
                                     filter condition in intracotect
@@ -126,8 +131,8 @@ class NtkRecord:
     def get_ntk_data(self, cdr, list_call_type):
         '''
         we will be sent list with one value [2,] if we need local traffic
-        and list with length 2 with value [2, -53] if we need intercity
-        traffic special for using in condition "not in [2,-53]"
+        and list with length 2 with value [2, -55] if we need intercity
+        traffic special for using in condition "not in [2,-55]"
         if len(list_call_type) > 1
         '''
         list_to_return = []
@@ -135,6 +140,13 @@ class NtkRecord:
             for index in range(len(ntk_records)):
                 if (cdr == ntk_records[index].cdr_set_id and
                         ntk_records[index].call_type in list_call_type):
+                    list_to_return.append([int(cdr),
+                                           int(ntk_records[index].call_type),
+                                           int(ntk_records[index].sum_dur)])
+        else: #len(list_call_type) > 1
+            for index in range(len(ntk_records)):
+                if (cdr == ntk_records[index].cdr_set_id and
+                        ntk_records[index].call_type not in list_call_type):
                     list_to_return.append([int(cdr),
                                            int(ntk_records[index].call_type),
                                            int(ntk_records[index].sum_dur)])
@@ -167,7 +179,6 @@ class MsRecord:
                                        int(ms_records[index].substr_service_type),
                                        int(ms_records[index].sum_dur)])
         return list_to_return
-        pass
 
 
 def sum_third(in_list):
@@ -175,6 +186,36 @@ def sum_third(in_list):
     for index in range(len(in_list)):
         summ += in_list[index][2]
     return summ
+
+def get_list_of_traffic_types(in_list):
+    set_to_return = set()
+    for element in in_list:
+        if element[1] == 0:
+            set_to_return.add('Міжмісто')
+        elif element[1] == 8:
+            set_to_return.add('800')
+        elif element[1] == 9:
+            set_to_return.add('900')
+        else:
+            set_to_return.add(str(element[1]))
+            print(f"ERROR with value {element[1]} in ntk_cdrs_list",
+                  f"{in_list}. Value not subscribed")
+            error_file = open(log_file_name, "a")
+            print(f"{datetime.now()} Error with value {element[1]} in ntk_cdrs_list",
+                  f"{in_list}. Value not subscribed", file=error_file)
+            error_file.close()
+    list_to_return = []
+    if 'Міжмісто' in set_to_return:
+        list_to_return.append('Міжмісто')
+    if '800' in set_to_return:
+        list_to_return.append('800')
+    if '900' in set_to_return:
+        list_to_return.append('900')
+    return list_to_return   
+    #print("+++++", list_to_return)
+            
+        
+    # print('---------------', in_list)
 
 
 log_file_name = os.path.join(os.getcwd(), "ms_ntk_compare", "error_log.txt")
@@ -184,6 +225,8 @@ ntk_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
                              "порівняння_мс_нтк_вхід_нтк.txt")
 result_in_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
                                    "out_file_just_in_lviv.txt")
+result_out_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
+                                    "result_in_file.txt")
 
 # read ms file
 ms_file = open(ms_file_name, "r")
@@ -293,7 +336,7 @@ for index in range(len(result_in_records)):
     # comzal
     if (result_in_records[index].io == 'IA_IN' and
             result_in_records[index].source_name == 'DA_CALLO_LVV'):
-        result_in_records[index].availability = '(Комзал)'
+        result_in_records[index].availability = 'Комзал'
         continue
     # vhid ne comzal
     # lets find list of cdr's $result_in_redord[i].load_condition
@@ -303,8 +346,8 @@ for index in range(len(result_in_records)):
         result_in_records[index].get_list_of_cdrs()
         # lets make empty ours lists for accumulate data for all
         # for different cdr's in $result_in_records[index].load_condition
-        list_of_ntk_cdrs_data = []
         list_of_ms_cdrs_data = []
+        list_of_ntk_cdrs_data = []
         # неочевдина для мене зараз наступна умова, цей список в принципі
         # не має бути пустий тобто вона завжди виконується,
         #  хз навіщо я її писав
@@ -329,9 +372,11 @@ for index in range(len(result_in_records)):
                         result_in_records[index].list_of_cdrs[cdr_index],
                         ['2'])
 
-                print(index, result_in_records[index].list_of_cdrs[cdr_index])
-                print(list_of_ms_cdrs_data, sum_third(list_of_ms_cdrs_data))
-                print(list_of_ntk_cdrs_data, sum_third(list_of_ntk_cdrs_data))
+                #===============================================================
+                # print(index, result_in_records[index].list_of_cdrs[cdr_index])
+                # print(list_of_ms_cdrs_data, sum_third(list_of_ms_cdrs_data))
+                # print(list_of_ntk_cdrs_data, sum_third(list_of_ntk_cdrs_data))
+                #===============================================================
 
                 if not list_of_ms_cdrs_data and not list_of_ntk_cdrs_data:
                     result_in_records[index].availability = 'Ні'
@@ -357,6 +402,58 @@ for index in range(len(result_in_records)):
                     print("True")
                 else:
                     result_in_records[index].dur_conformity = 'Ні'
+                    
+            else: #result_in_records[index].processing_local != '2'
+                for cdr_index in range(len(
+                                    result_in_records[index].list_of_cdrs)):
+                    list_of_ms_cdrs_data += (ms_records[0].get_ms_data(
+                            result_in_records[index].list_of_cdrs[cdr_index],
+                            ['2', '3']))
+                    list_of_ntk_cdrs_data += ntk_records[0].get_ntk_data(
+                        result_in_records[index].list_of_cdrs[cdr_index],
+                        ['2','-55'])
+                print(index, result_in_records[index].list_of_cdrs[cdr_index])
+                print(list_of_ms_cdrs_data, sum_third(list_of_ms_cdrs_data))
+                print(list_of_ntk_cdrs_data, sum_third(list_of_ntk_cdrs_data))
+                if not list_of_ms_cdrs_data and not list_of_ntk_cdrs_data:
+                    result_in_records[index].availability = 'Ні'
+                    continue
+                list_of_traffic_types = get_list_of_traffic_types(
+                                        list_of_ntk_cdrs_data)
+                result_in_records[index].trafic_type = ','.join(
+                            list_of_traffic_types)
+                if list_of_ms_cdrs_data:
+                    set_of_cdrs_with_data = set()
+                    for item in list_of_ms_cdrs_data:
+                        set_of_cdrs_with_data.add(str(item[0]))
+
+                    print("set =", ','.join(set_of_cdrs_with_data))
+                    result_in_records[index].ms_cdr = ','.join(
+                                                        set_of_cdrs_with_data)
+                result_in_records[index].availability = 'Так'
+                result_in_records[index].conformity = 'Так'
+                if (sum_third(list_of_ms_cdrs_data) ==
+                        sum_third(list_of_ntk_cdrs_data)):
+                    result_in_records[index].dur_conformity = 'Так'
+                    # print("True")
+                else:
+                    result_in_records[index].dur_conformity = 'Ні'
+                
+                    
+                
+                
+                    
+                    
+                
+                    
+                
+
+
+
+
+
+
+
 
                     # print(list_of_ntk_cdrs_data)
                     # for ms_index in range(len(ms_records)):
@@ -367,3 +464,25 @@ for index in range(len(result_in_records)):
 
 for record in result_in_records:
     print(record)
+
+result_out_file_for_vrntk_in = open(result_out_file_name, "w")
+
+for index in range(len(result_in_records)):
+    print(str(result_in_records[index].trafic_type) + "\t" +
+          str(result_in_records[index].ms_cdr) + "\t" +
+          str(result_in_records[index].availability) + "\t" +
+          str(result_in_records[index].conformity) + "\t" +
+          str(result_in_records[index].dur_conformity) + "\t" +
+          str(result_in_records[index].load_condition) + "\t" +
+          str(result_in_records[index].operator_id) + "\t" +
+          str(result_in_records[index].account_number) + "\t" +
+          str(result_in_records[index].region) + "\t" +
+          str(result_in_records[index].source_name) + "\t" +
+          str(result_in_records[index].io) + "\t" +
+          str(result_in_records[index].processing_local) + "\t" +
+          str(result_in_records[index].description) + "\t" +
+          str(result_in_records[index].more_info),
+          file=result_out_file_for_vrntk_in)
+
+
+
