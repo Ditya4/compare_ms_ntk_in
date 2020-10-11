@@ -3,7 +3,7 @@ from datetime import datetime
 '''
 think about:
 in 4 result column called conformity are we need to write 'Yes' if cdr's are
-exactly equal cause they are semi equal all the time   
+exactly equal cause they are semi equal all the time
 '''
 
 
@@ -143,7 +143,7 @@ class NtkRecord:
                     list_to_return.append([int(cdr),
                                            int(ntk_records[index].call_type),
                                            int(ntk_records[index].sum_dur)])
-        else: #len(list_call_type) > 1
+        else:  # len(list_call_type) > 1
             for index in range(len(ntk_records)):
                 if (cdr == ntk_records[index].cdr_set_id and
                         ntk_records[index].call_type not in list_call_type):
@@ -175,9 +175,10 @@ class MsRecord:
             if (ms_records[index].cdr_set == cdr and
                     ms_records[index].substr_service_type
                     in substr_trafic_type):
-                list_to_return.append([int(cdr),
-                                       int(ms_records[index].substr_service_type),
-                                       int(ms_records[index].sum_dur)])
+                list_to_return.append(
+                            [int(cdr),
+                             int(ms_records[index].substr_service_type),
+                             int(ms_records[index].sum_dur)])
         return list_to_return
 
 
@@ -186,6 +187,7 @@ def sum_third(in_list):
     for index in range(len(in_list)):
         summ += in_list[index][2]
     return summ
+
 
 def get_list_of_traffic_types(in_list):
     set_to_return = set()
@@ -201,8 +203,9 @@ def get_list_of_traffic_types(in_list):
             print(f"ERROR with value {element[1]} in ntk_cdrs_list",
                   f"{in_list}. Value not subscribed")
             error_file = open(log_file_name, "a")
-            print(f"{datetime.now()} Error with value {element[1]} in ntk_cdrs_list",
-                  f"{in_list}. Value not subscribed", file=error_file)
+            print(f"{datetime.now()} Error with value {element[1]} in",
+                  f"ntk_cdrs_list {in_list}. Value not subscribed",
+                  file=error_file)
             error_file.close()
     list_to_return = []
     if 'Міжмісто' in set_to_return:
@@ -211,13 +214,49 @@ def get_list_of_traffic_types(in_list):
         list_to_return.append('800')
     if '900' in set_to_return:
         list_to_return.append('900')
-    return list_to_return   
-    #print("+++++", list_to_return)
-            
-        
-    # print('---------------', in_list)
+    return list_to_return
 
 
+def check_for_warnings():
+    '''
+    type of $list_of_cdr_type will be [list_of_cdrs, 2(local)/0(intercity)]
+    and than we will write to $log_file all pairs which has more than one
+    record in this list, to operate them manually.
+    for now lets ignore all comzal records.
+    '''
+    list_of_cdr_type = []
+    reserve_list_of_cdr_type_with_comzal = []
+    set_of_cdr_type = set()
+    for index in range(len(result_in_records)):
+        if result_in_records[index].processing_local in ('2', '1'):
+            traffic_type = '2'
+        else:
+            traffic_type = '0'
+        reserve_list_of_cdr_type_with_comzal.append(
+                    str([result_in_records[index].list_of_cdrs, traffic_type]))
+        if result_in_records[index].source_name not in ('DA_CALLS_LVV',
+                                                        'DO_CALLS_LVV'):
+            continue
+        list_of_cdr_type.append(str([result_in_records[index].list_of_cdrs,
+                                     traffic_type]))
+        if str(list_of_cdr_type[-1]) in set_of_cdr_type:
+            error_file = open(log_file_name, "a")
+            print('Warning we find same cdr_set and processing_local',
+                  'inside in_result_file with value', list_of_cdr_type[-1],
+                  'at lines in_result_file',
+                  reserve_list_of_cdr_type_with_comzal.index(
+                     str(list_of_cdr_type[-1])), 'and', index, file=error_file)
+            error_file.close()
+            print('-+-+-+-+ Warning add log', list_of_cdr_type[-1],
+                  'at line in in_result_file',
+                  reserve_list_of_cdr_type_with_comzal.index(
+                  str(list_of_cdr_type[-1])), 'and', index)
+        else:
+            set_of_cdr_type.add(list_of_cdr_type[-1])
+        print(index, list_of_cdr_type[-1])
+
+
+# main()
 log_file_name = os.path.join(os.getcwd(), "ms_ntk_compare", "error_log.txt")
 ms_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
                             "порівняння_мс_нтк_вхід_мс.txt")
@@ -372,11 +411,11 @@ for index in range(len(result_in_records)):
                         result_in_records[index].list_of_cdrs[cdr_index],
                         ['2'])
 
-                #===============================================================
-                # print(index, result_in_records[index].list_of_cdrs[cdr_index])
-                # print(list_of_ms_cdrs_data, sum_third(list_of_ms_cdrs_data))
-                # print(list_of_ntk_cdrs_data, sum_third(list_of_ntk_cdrs_data))
-                #===============================================================
+            # ===============================================================
+            # print(index, result_in_records[index].list_of_cdrs[cdr_index])
+            # print(list_of_ms_cdrs_data, sum_third(list_of_ms_cdrs_data))
+            # print(list_of_ntk_cdrs_data, sum_third(list_of_ntk_cdrs_data))
+            # ===============================================================
 
                 if not list_of_ms_cdrs_data and not list_of_ntk_cdrs_data:
                     result_in_records[index].availability = 'Ні'
@@ -402,8 +441,8 @@ for index in range(len(result_in_records)):
                     print("True")
                 else:
                     result_in_records[index].dur_conformity = 'Ні'
-                    
-            else: #result_in_records[index].processing_local != '2'
+
+            else:  # result_in_records[index].processing_local != '2'
                 for cdr_index in range(len(
                                     result_in_records[index].list_of_cdrs)):
                     list_of_ms_cdrs_data += (ms_records[0].get_ms_data(
@@ -411,7 +450,7 @@ for index in range(len(result_in_records)):
                             ['2', '3']))
                     list_of_ntk_cdrs_data += ntk_records[0].get_ntk_data(
                         result_in_records[index].list_of_cdrs[cdr_index],
-                        ['2','-55'])
+                        ['2', '-55'])
                 print(index, result_in_records[index].list_of_cdrs[cdr_index])
                 print(list_of_ms_cdrs_data, sum_third(list_of_ms_cdrs_data))
                 print(list_of_ntk_cdrs_data, sum_third(list_of_ntk_cdrs_data))
@@ -438,22 +477,6 @@ for index in range(len(result_in_records)):
                     # print("True")
                 else:
                     result_in_records[index].dur_conformity = 'Ні'
-                
-                    
-                
-                
-                    
-                    
-                
-                    
-                
-
-
-
-
-
-
-
 
                     # print(list_of_ntk_cdrs_data)
                     # for ms_index in range(len(ms_records)):
@@ -462,8 +485,17 @@ for index in range(len(result_in_records)):
         # print(result_in_records[index].load_condition)
         # print(result_in_records[index].list_of_cdrs)
 
-for record in result_in_records:
-    print(record)
+'''
+Rising Warnings when in result_in_file present more than one record with
+the same cdr and in $load_condition and same $processing_local(2 or not 2)
+value we rise an warning to check this situation manually
+'''
+check_for_warnings()
+
+# ===============================================================================
+# for record in result_in_records:
+#     print(record)
+# ===============================================================================
 
 result_out_file_for_vrntk_in = open(result_out_file_name, "w")
 
@@ -483,6 +515,3 @@ for index in range(len(result_in_records)):
           str(result_in_records[index].description) + "\t" +
           str(result_in_records[index].more_info),
           file=result_out_file_for_vrntk_in)
-
-
-
