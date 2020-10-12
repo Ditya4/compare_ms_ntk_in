@@ -1,6 +1,12 @@
 import os
 from datetime import datetime
 '''
+перед розділенням вхідного результуючого файлу на вхід і вихід в якійсь із
+останніх колонок я прописую цифри від 1 до упору, потім файл ділиться на 
+вхід і вихід, обробляється окремо і зливається в 1 файл, який сотрується
+по даній колонці і ми можем все скопіювати за 1 раз.
+'''
+'''
 think about:
 in 4 result column called conformity are we need to write 'Yes' if cdr's are
 exactly equal cause they are semi equal all the time
@@ -8,13 +14,17 @@ exactly equal cause they are semi equal all the time
 
 
 class ResultRecord:
-    # місто    3216    так    так    так    cdr_set =3216    1203    3226    32
-    #  DA_CALLS_LVV    IA_IN    2
+    '''
+    міжмісто    3270    так    так    так    
+    cdr_set=3270 and switch_id in ('4462')    1202    3252    32 
+    DA_CALLS_LVV    IA_IN    "АТ ""Укртранснафта"" , м. Львів"        0
+    '''
     def __init__(self, index=None, trafic_type=None, ms_cdr=None,
                  availability=None, conformity=None, dur_conformity=None,
                  load_condition=None, operator_id=None, account_number=None,
-                 region=None, source_name=None, io=None, processing_local=None,
-                 description=None, more_info=None):
+                 region=None, source_name=None, io=None, operators_name=None,
+                 recipient_id=None, processing_local=None, description=None,
+                 more_info=None):
         """
         index - index :))
         type - traffic type misto/ migmisto/ migmisto 800/ migmisto 800 900
@@ -31,6 +41,8 @@ class ResultRecord:
         region
         source_name - da_calls_lvv / do_calls_lvv/ da_callo_lvv
         io(input/output) - IA_IN/ IA_OUT
+        operators_name - name of operator
+        recipient_id - hard to say, some data column
         processing_local - 0 - no, 1 - yes, 2 - local only
         description
         more_info
@@ -52,6 +64,8 @@ class ResultRecord:
         self.region = region
         self.source_name = source_name
         self.io = io
+        self.operators_name = operators_name
+        self.recipient_id = recipient_id
         self.processing_local = processing_local
         self.description = description
         self.more_info = more_info
@@ -70,6 +84,7 @@ class ResultRecord:
                 " , " + str(self.operator_id) + " , " +
                 str(self.account_number) + " , " + str(self.region) +
                 " , " + str(self.source_name) + " , " + str(self.io) +
+                " , " + str(self.operators_name) + " , " + str(self.recipient_id) +
                 " , " + str(self.processing_local) + " , " +
                 str(self.description) + " , " + str(self.more_info) + "]")
 
@@ -257,14 +272,29 @@ def check_for_warnings():
 
 
 # main()
-log_file_name = os.path.join(os.getcwd(), "ms_ntk_compare", "error_log.txt")
-ms_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
+# Swich to Lviv
+# ===============================================================================
+# data_in_folder = "ms_ntk_compare_lvv_in"
+# result_in_file_name_name = "lviv_in_all_4_12.10.txt"
+# da_callo_region = 'DA_CALLO_LVV'
+# da_calls_region = 'DA_CALLS_LVV'
+# ===============================================================================
+#Swich to Uzhorod
+result_in_file_name_name = "result_in_file_uzh.txt"
+data_in_folder = "ms_ntk_compare_uzh_in"
+da_callo_region = 'DA_CALLO_UZH'
+da_calls_region = 'DA_CALLS_UZH'
+
+log_file_name = os.path.join(os.getcwd(), data_in_folder, "error_log.txt")
+ms_file_name = os.path.join(os.getcwd(), data_in_folder,
                             "порівняння_мс_нтк_вхід_мс.txt")
-ntk_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
+ntk_file_name = os.path.join(os.getcwd(), data_in_folder,
                              "порівняння_мс_нтк_вхід_нтк.txt")
-result_in_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
-                                   "out_file_just_in_lviv.txt")
-result_out_file_name = os.path.join(os.getcwd(), "ms_ntk_compare",
+result_in_file_name = os.path.join(os.getcwd(), data_in_folder,
+                                   result_in_file_name_name)
+                                   # "lviv_in_all_4_12.10.txt")
+                                   # "result_in_file_uzh.txt")
+result_out_file_name = os.path.join(os.getcwd(), data_in_folder,
                                     "result_in_file.txt")
 
 # read ms file
@@ -335,8 +365,13 @@ for record in ntk_records:
 
 # read result_in file
 result_in_file = open(result_in_file_name)
-result_in_lines = result_in_file.readlines()
+result_in_lines = result_in_file.readlines()   
 size_of_result_in_list = len(result_in_lines)
+
+#erasing '\n' in the end of lines
+for index in range(size_of_result_in_list):
+    result_in_lines[index] = result_in_lines[index].rstrip()
+    
 result_in_records = [None] * size_of_result_in_list
 in_result_in_list_index = 0
 out_result_in_list_index = 0
@@ -344,8 +379,8 @@ while in_result_in_list_index < size_of_result_in_list:
     line_split = result_in_lines[in_result_in_list_index].split("\t")
     if line_split[-1] == '\n':
         line_split.pop()
-    # print(line_split)
-    if len(line_split) == 13:
+    print(in_result_in_list_index,"line_split =", line_split)
+    if len(line_split) == 14:
         result_in_records[out_result_in_list_index] = ResultRecord(
                                                 out_result_in_list_index,
                                                 *line_split)
@@ -353,7 +388,8 @@ while in_result_in_list_index < size_of_result_in_list:
         out_result_in_list_index += 1
     else:
         print(f"Error in line from file number {in_ntk_list_index} with value",
-              f"{line_split}")
+              f"{line_split} wait for 14 parameters and got",
+              f"{len(line_split)}")
         error_file = open(log_file_name, "a")
         print(f"{datetime.now()} Error in file {result_in_file_name} in line",
               f"from file number {in_result_in_list_index}",
@@ -374,14 +410,14 @@ while in_result_in_list_index < size_of_result_in_list:
 for index in range(len(result_in_records)):
     # comzal
     if (result_in_records[index].io == 'IA_IN' and
-            result_in_records[index].source_name == 'DA_CALLO_LVV'):
+            result_in_records[index].source_name == da_callo_region):
         result_in_records[index].availability = 'Комзал'
         continue
     # vhid ne comzal
     # lets find list of cdr's $result_in_redord[i].load_condition
 
     if (result_in_records[index].io == 'IA_IN' and
-            result_in_records[index].source_name == 'DA_CALLS_LVV'):
+            result_in_records[index].source_name == da_calls_region):
         result_in_records[index].get_list_of_cdrs()
         # lets make empty ours lists for accumulate data for all
         # for different cdr's in $result_in_records[index].load_condition
@@ -511,7 +547,10 @@ for index in range(len(result_in_records)):
           str(result_in_records[index].region) + "\t" +
           str(result_in_records[index].source_name) + "\t" +
           str(result_in_records[index].io) + "\t" +
+          str(result_in_records[index].operators_name) + "\t" +
+          str(result_in_records[index].recipient_id) + "\t" +
           str(result_in_records[index].processing_local) + "\t" +
           str(result_in_records[index].description) + "\t" +
           str(result_in_records[index].more_info),
           file=result_out_file_for_vrntk_in)
+result_out_file_for_vrntk_in.close()
