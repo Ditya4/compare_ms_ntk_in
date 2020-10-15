@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 '''
 перед розділенням вхідного результуючого файлу на вхід і вихід в якійсь із
-останніх колонок я прописую цифри від 1 до упору, потім файл ділиться на 
+останніх колонок я прописую цифри від 1 до упору, потім файл ділиться на
 вхід і вихід, обробляється окремо і зливається в 1 файл, який сотрується
 по даній колонці і ми можем все скопіювати за 1 раз.
 '''
@@ -15,8 +15,8 @@ exactly equal cause they are semi equal all the time
 
 class ResultRecord:
     '''
-    міжмісто    3270    так    так    так    
-    cdr_set=3270 and switch_id in ('4462')    1202    3252    32 
+    міжмісто    3270    так    так    так
+    cdr_set=3270 and switch_id in ('4462')    1202    3252    32
     DA_CALLS_LVV    IA_IN    "АТ ""Укртранснафта"" , м. Львів"        0
     '''
     def __init__(self, index=None, trafic_type=None, ms_cdr=None,
@@ -84,9 +84,10 @@ class ResultRecord:
                 " , " + str(self.operator_id) + " , " +
                 str(self.account_number) + " , " + str(self.region) +
                 " , " + str(self.source_name) + " , " + str(self.io) +
-                " , " + str(self.operators_name) + " , " + str(self.recipient_id) +
-                " , " + str(self.processing_local) + " , " +
-                str(self.description) + " , " + str(self.more_info) + "]")
+                " , " + str(self.operators_name) + " , " +
+                str(self.recipient_id) + " , " + str(self.processing_local) +
+                " , " + str(self.description) + " , " +
+                str(self.more_info) + "]")
 
     def get_list_of_cdrs(self):
         cdr = self.load_condition
@@ -279,7 +280,8 @@ def check_for_warnings():
 # da_callo_region = 'DA_CALLO_LVV'
 # da_calls_region = 'DA_CALLS_LVV'
 # ===============================================================================
-#Swich to Uzhorod
+# Swich to Uzhorod
+
 result_in_file_name_name = "result_in_file_uzh.txt"
 data_in_folder = "ms_ntk_compare_uzh_in"
 da_callo_region = 'DA_CALLO_UZH'
@@ -292,8 +294,6 @@ ntk_file_name = os.path.join(os.getcwd(), data_in_folder,
                              "порівняння_мс_нтк_вхід_нтк.txt")
 result_in_file_name = os.path.join(os.getcwd(), data_in_folder,
                                    result_in_file_name_name)
-                                   # "lviv_in_all_4_12.10.txt")
-                                   # "result_in_file_uzh.txt")
 result_out_file_name = os.path.join(os.getcwd(), data_in_folder,
                                     "result_in_file.txt")
 
@@ -365,13 +365,13 @@ for record in ntk_records:
 
 # read result_in file
 result_in_file = open(result_in_file_name)
-result_in_lines = result_in_file.readlines()   
+result_in_lines = result_in_file.readlines()
 size_of_result_in_list = len(result_in_lines)
 
-#erasing '\n' in the end of lines
+# erasing '\n' in the end of lines
 for index in range(size_of_result_in_list):
     result_in_lines[index] = result_in_lines[index].rstrip()
-    
+
 result_in_records = [None] * size_of_result_in_list
 in_result_in_list_index = 0
 out_result_in_list_index = 0
@@ -379,7 +379,7 @@ while in_result_in_list_index < size_of_result_in_list:
     line_split = result_in_lines[in_result_in_list_index].split("\t")
     if line_split[-1] == '\n':
         line_split.pop()
-    print(in_result_in_list_index,"line_split =", line_split)
+    print(in_result_in_list_index, "line_split =", line_split)
     if len(line_split) == 14:
         result_in_records[out_result_in_list_index] = ResultRecord(
                                                 out_result_in_list_index,
