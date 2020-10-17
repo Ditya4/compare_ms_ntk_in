@@ -2,6 +2,12 @@ import os
 from datetime import datetime
 
 """
+список врнтк потрібно згрупувати по угода, рахунок, місто/міжмісто, список сдр,
+каунт (*) і сум_дюр, хоча можна кожен раз пробігатись по всім угодам і
+насумовувати на кожен сдр, в кінці кінців ми маєм це порівняти по тривалості
+з містом/міжмістом з мс а там є вихідний сдр і місто/міжмісто давай почнем з
+групування таблиці мс
+
 в файлі мс_нтк в нас є оператор, рахунок, тип трафіку і сдри а в вибірці
 з інтраконекту є оператор рахунок і дані
 а порівнювати маєм з мсом де є сдр і дані(при чому сумоване по угоді,
@@ -85,6 +91,21 @@ class ResultRecord:
         s = __init__ parameters
         print('str(' + s.replace('=None, ', ') + " , " + str('))
         '''
+        if self.list_of_cdrs:
+            return (str(self.index) + " [" +
+                    str(self.trafic_type) + " , " + str(self.ms_cdr) +
+                    " , " + str(self.availability) + " , " +
+                    str(self.conformity) + " , " + str(self.dur_conformity) +
+                    " , " + str(self.load_condition) +
+                    " , " + str(self.operator_id) + " , " +
+                    str(self.account_number) + " , " + str(self.region) +
+                    " , " + str(self.source_name) + " , " + str(self.io) +
+                    " , " + str(self.operators_name) + " , " +
+                    str(self.recipient_id) + " , " +
+                    str(self.processing_local) +
+                    " , " + str(self.description) + " , " +
+                    str(self.more_info) + "]" + str(self.list_of_cdrs))
+
         return (str(self.index) + " [" +
                 str(self.trafic_type) + " , " + str(self.ms_cdr) + " , " +
                 str(self.availability) + " , " + str(self.conformity) + " , " +
@@ -101,11 +122,10 @@ class ResultRecord:
         cdr = self.load_condition
         print(cdr)
         if 'cdr_set_out=' in cdr or 'cdr_set_out =' in cdr:
-            print('bingo')
+            # print('bingo')
             cdr_to_add = (
                 [self.load_condition[self.load_condition.find('=')
                                      + 1:].strip()[:4]])
-            #        тут змінив закриваючу дужку була перед [:4]
             # print(cdr_to_add)
             pass
 
@@ -191,8 +211,32 @@ class NtkRecord:
                         self.list_of_cdrs = (
                             result_out_records[index].list_of_cdrs)
 
-    def get_ntk_data(self, cdr, list_call_type):
-        pass
+    def get_ntk_data(self, cdr_list, list_call_type):
+        '''
+        format of return data list is
+        [cdr_list, int(call_type), int(sum_dur), recipient_id, out_tg
+        '''
+        list_to_return = []
+        if len(list_call_type) == 1:
+            for index in range(len(ntk_records)):
+                if (cdr_list == ntk_records[index].list_of_cdrs and
+                        ntk_records[index].call_type in list_call_type):
+                    list_to_return.append([cdr_list,
+                                           int(ntk_records[index].call_type),
+                                           int(ntk_records[index].sum_dur),
+                                           ntk_records[index].recipient_id,
+                                           ntk_records[index].out_tg])
+        else:  # len(list_call_type)>1-change call_type condition in to not in
+            for index in range(len(ntk_records)):
+                if (cdr_list == ntk_records[index].list_of_cdrs and
+                        ntk_records[index].call_type not in list_call_type):
+                    list_to_return.append([cdr_list,
+                                           int(ntk_records[index].call_type),
+                                           int(ntk_records[index].sum_dur),
+                                           ntk_records[index].recipient_id,
+                                           ntk_records[index].out_tg])
+
+        return list_to_return
 
         '''
         all comments in this method are False
@@ -224,8 +268,9 @@ class NtkRecord:
 
 
 class MsRecord:
-    def __init__(self, index=None, station=None, out_tg=None, cdr_set_out=None,
-                 substr_service_type=None, count=None, sum_dur=None):
+    def __init__(self, index=None, switch_id=None, out_tg=None,
+                 cdr_set_out=None, substr_service_type=None,
+                 count=None, sum_dur=None):
         '''
         switch_id, out_tg, cdr_set_out, substr(service_type,0,1),
         count (*), sum (duration)
@@ -233,7 +278,7 @@ class MsRecord:
         '''
 
         self.index = index
-        self. station = station
+        self.switch_id = switch_id
         self.out_tg = out_tg
         self.cdr_set_out = cdr_set_out
         self.substr_service_type = substr_service_type
@@ -241,12 +286,16 @@ class MsRecord:
         self.sum_dur = sum_dur
 
     def __str__(self):
-        return (str(self.index) + " [" + str(self.station) + " , " +
+        return (str(self.index) + " [" + str(self.switch_id) + " , " +
                 str(self.out_tg) + " , " +
                 str(self.cdr_set_out) + " , " + str(self.substr_service_type) +
                 " , " + str(self.count) + " , " + str(self.sum_dur) + "]")
 
     def get_ms_data(self, cdr, substr_trafic_type):
+        '''
+        format of return data list is
+        [int(cdr), int(substr_srtvice_type), int(sum_dur), switch_id, out_tg]
+        '''
         list_to_return = []
         for index in range(len(ms_records)):
             if (ms_records[index].cdr_set_out == cdr and
@@ -255,7 +304,9 @@ class MsRecord:
                 list_to_return.append(
                             [int(cdr),
                              int(ms_records[index].substr_service_type),
-                             int(ms_records[index].sum_dur)])
+                             int(ms_records[index].sum_dur),
+                             ms_records[index].switch_id,
+                             ms_records[index].out_tg])
         return list_to_return
 
 
@@ -284,11 +335,6 @@ def read_result_out_file(result_out_input_file_name):
             in_result_out_list_index += 1
             out_result_out_list_index += 1
         else:
-            # ===================================================================
-            # print(f"Error in line from file number {in_ntk_list_index} with",
-            #       f"value {line_split} wait for 14 parameters and got",
-            #       f"{len(line_split)}")
-            # ===================================================================
             error_file = open(log_file_name, "a")
             print(f"{datetime.now()} Error in file",
                   f"{result_out_input_file_name}",
@@ -366,20 +412,180 @@ def read_ms_file(ms_file_name):
     return ms_records
 
 
+def sum_third(in_list):
+    summ = 0
+    for index in range(len(in_list)):
+        summ += in_list[index][2]
+    return summ
+
+
+def get_list_of_traffic_types(in_list):
+    set_to_return = set()
+    for element in in_list:
+        if element[1] == -1:
+            set_to_return.add('Міжмісто')
+        elif element[1] == -8:
+            set_to_return.add('800')
+        elif element[1] == -9:
+            set_to_return.add('900')
+        else:
+            set_to_return.add(str(element[1]))
+            print(f"ERROR with value {element[1]} in ntk_cdrs_list",
+                  f"{in_list}. Value not subscribed")
+            error_file = open(log_file_name, "a")
+            print(f"{datetime.now()} Error with value {element[1]} in",
+                  f"ntk_cdrs_list {in_list}. Value not subscribed",
+                  file=error_file)
+            error_file.close()
+    list_to_return = []
+    if 'Міжмісто' in set_to_return:
+        list_to_return.append('Міжмісто')
+    if '800' in set_to_return:
+        list_to_return.append('800')
+    if '900' in set_to_return:
+        list_to_return.append('900')
+    return list_to_return
+
+
+def fill_empty_fields_in_result_out_records(result_out_records):
+    for index in range(len(result_out_records)):
+        print(str(result_out_records[index].load_condition))
+        if 'Error' in str(result_out_records[index]):
+            print('Error')
+
+        elif (result_out_records[index].io == 'IA_OUT' and
+                result_out_records[index].source_name == DO_CALLO_REGION):
+            result_out_records[index].availability = 'Комзал'
+            print('Комзал')
+
+        elif (result_out_records[index].io == 'IA_OUT' and
+                result_out_records[index].source_name == DO_CALLS_REGION):
+            list_of_ms_cdrs_data = []
+            list_of_ntk_cdrs_data = []
+            print(f"result_out_records[{index}].list_of_cdrs =",
+                  result_out_records[index].list_of_cdrs)
+            # dividing analyze for city and intercity
+            if result_out_records[index].processing_local == '2':
+                for cdr_index in range(len(
+                        result_out_records[index].list_of_cdrs)):
+                    ms_result = ms_records[0].get_ms_data(
+                        # second parameter ['1'] we will be check for
+                        # ms_records.substr_service_type in ['1']
+                        # or in ['2','3']
+                        result_out_records[index].list_of_cdrs[cdr_index],
+                        ['1'])
+                    if ms_result:
+                        list_of_ms_cdrs_data += ms_result
+                # make 1 shift left cause we have same values
+                #  in fields $cdr_list for records and ntk_data
+                list_of_ntk_cdrs_data += (ntk_records[0].get_ntk_data(
+                    # second parameter ['-2'] we will be check for
+                    # nkt_records.cdr_id in ['-2'] or not in ['-2','-55']
+                    # if len(second_parameter) > 1
+                    result_out_records[index].list_of_cdrs,
+                    ['-2']))
+
+                print('ms')
+                print(list_of_ms_cdrs_data)
+                print('ntk')
+                print(list_of_ntk_cdrs_data)
+                if not list_of_ms_cdrs_data and not list_of_ntk_cdrs_data:
+                    result_out_records[index].availability = 'Ні'
+                else:
+                    result_out_records[index].trafic_type = 'Місто'
+                    # fill data for second column with
+                    # all distinct cdrs in ms_cdrs
+                    if list_of_ms_cdrs_data:
+                        set_of_cdrs_with_data = set()
+                        for item in list_of_ms_cdrs_data:
+                            set_of_cdrs_with_data.add(str(item[0]))
+
+                        print("set =", ','.join(set_of_cdrs_with_data))
+                        result_out_records[index].ms_cdr = ','.join(
+                                                        set_of_cdrs_with_data)
+                    result_out_records[index].availability = 'Так'
+                    result_out_records[index].conformity = 'Так'
+                    if (sum_third(list_of_ms_cdrs_data) ==
+                            sum_third(list_of_ntk_cdrs_data)):
+                        result_out_records[index].dur_conformity = 'Так'
+                        print("True")
+                    else:
+                        result_out_records[index].dur_conformity = 'Ні'
+
+            else:  # result_out_records[index].processing_local != '2'
+                for cdr_index in range(len(
+                        result_out_records[index].list_of_cdrs)):
+                    ms_result = ms_records[0].get_ms_data(
+                        # second parameter ['1'] we will be check for
+                        # ms_records.substr_service_type
+                        # in ['1'] or in ['2','3']
+                        result_out_records[index].list_of_cdrs[cdr_index],
+                        ['2', '3'])
+                    # By next if we filter empty lines, which could return
+                    # $get_ms_data method
+                    if ms_result:
+                        list_of_ms_cdrs_data += ms_result
+                # make 1 shift left cause we have same values
+                # in fields $cdr_list for records and ntk_data
+                list_of_ntk_cdrs_data += (ntk_records[0].get_ntk_data(
+                    # second parameter ['-2'] we will be check for
+                    # nkt_records.cdr_id in ['-2'] or not in ['-2','-55']
+                    # if len(second_parameter) > 1
+                    # '-55'- just random number which never could be in data
+                    result_out_records[index].list_of_cdrs,
+                    ['-2', '-55']))
+                print('ms')
+                print(list_of_ms_cdrs_data)
+                print('ntk')
+                print(list_of_ntk_cdrs_data)
+                if not list_of_ms_cdrs_data and not list_of_ntk_cdrs_data:
+                    result_out_records[index].availability = 'Ні'
+                elif (result_out_records[index].io == 'IA_OUT' and
+                        result_out_records[index].source_name ==
+                        DO_CALLO_REGION):
+                    result_out_records[index].availability = 'Комзал'
+                    print('Комзал')
+                elif (result_out_records[index].io == 'IA_OUT' and
+                        result_out_records[index].source_name ==
+                        DO_CALLS_REGION):
+                    list_of_traffic_types = get_list_of_traffic_types(
+                                        list_of_ntk_cdrs_data)
+                    result_out_records[index].trafic_type = ','.join(
+                            list_of_traffic_types)
+
+                    if list_of_ms_cdrs_data:
+                        set_of_cdrs_with_data = set()
+                        for item in list_of_ms_cdrs_data:
+                            set_of_cdrs_with_data.add(str(item[0]))
+
+                        print("set =", ','.join(set_of_cdrs_with_data))
+                        result_out_records[index].ms_cdr = ','.join(
+                                                        set_of_cdrs_with_data)
+                    result_out_records[index].availability = 'Так'
+                    result_out_records[index].conformity = 'Так'
+
+                    if (sum_third(list_of_ms_cdrs_data) ==
+                            sum_third(list_of_ntk_cdrs_data)):
+                        result_out_records[index].dur_conformity = 'Так'
+                    else:
+                        result_out_records[index].dur_conformity = 'Ні'
+
+
 # main()
 
 data_in_folder = "ms_ntk_compare_lvv_out"
-result_out_file_name_name = "result_out_file_lviv.txt"
-ntk_file_name_name = "порівняня мс інтраконект тут нтк львів вихід.txt"
-ms_file_name_name = "порівняня мс інтраконект тут мс львів вихід.txt"
-DO_CALLS_LVV = 'DO_CALLS_LVV'
-DO_CALLO_LVV = 'DO_CALLO_LVV'
+RESULT_OUT_FILE_NAME_NAME = "result_out_file_lviv.txt"
+NTK_FILE_NAME_NAME = "порівняня мс інтраконект тут нтк львів вихід.txt"
+MS_FILE_NAME_NAME = "порівняня мс інтраконект тут мс львів вихід.txt"
+ERROR_LOG_FILE_NAME = "error_log.txt"
+DO_CALLS_REGION = 'DO_CALLS_LVV'
+DO_CALLO_REGION = 'DO_CALLO_LVV'
 
 result_out_input_file_name = os.path.join(os.getcwd(), data_in_folder,
-                                          result_out_file_name_name)
-ntk_file_name = os.path.join(os.getcwd(), data_in_folder, ntk_file_name_name)
-ms_file_name = os.path.join(os.getcwd(), data_in_folder, ms_file_name_name)
-log_file_name = os.path.join(os.getcwd(), data_in_folder, "error_log.txt")
+                                          RESULT_OUT_FILE_NAME_NAME)
+ntk_file_name = os.path.join(os.getcwd(), data_in_folder, NTK_FILE_NAME_NAME)
+ms_file_name = os.path.join(os.getcwd(), data_in_folder, MS_FILE_NAME_NAME)
+log_file_name = os.path.join(os.getcwd(), data_in_folder, ERROR_LOG_FILE_NAME)
 
 '''
 ms_file_name = os.path.join(os.getcwd(), data_in_folder,
@@ -400,4 +606,8 @@ for record in ntk_records:
 
 ms_records = read_ms_file(ms_file_name)
 for record in ms_records:
+    print(record)
+
+fill_empty_fields_in_result_out_records(result_out_records)
+for record in result_out_records:
     print(record)
