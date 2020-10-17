@@ -16,7 +16,7 @@ exactly equal cause they are semi equal all the time
 class ResultRecord:
     '''
     міжмісто    3270    так    так    так
-    cdr_set=3270 and switch_id in ('4462')    1202    3252    32
+    cdr_set_out=3270 and switch_id in ('4462')    1202    3252    32
     DA_CALLS_LVV    IA_IN    "АТ ""Укртранснафта"" , м. Львів"        0
     '''
     def __init__(self, index=None, trafic_type=None, ms_cdr=None,
@@ -92,7 +92,7 @@ class ResultRecord:
     def get_list_of_cdrs(self):
         cdr = self.load_condition
         # print(cdr)
-        if 'cdr_set=' in cdr or 'cdr_set =' in cdr:
+        if 'cdr_set_out=' in cdr or 'cdr_set_out =' in cdr:
             # print('bingo')
             cdr_to_add = (
                 [self.load_condition[self.load_condition.find('=')
@@ -101,7 +101,7 @@ class ResultRecord:
             # print(cdr_to_add)
             pass
 
-        elif 'cdr_set in' in cdr or 'cdr_set  in' in cdr:
+        elif 'cdr_set_out in' in cdr or 'cdr_set_out  in' in cdr:
             # print('bongo')
             first_left_open_bracket = self.load_condition.find('(')
             first_left_close_bracket = self.load_condition.find(')')
@@ -142,7 +142,7 @@ class NtkRecord:
         return (str(self.index) + " [" + str(self.operator_id) + " , " +
                 str(self.account_number) + " , " + str(self.cdr_set_id) +
                 " , " + str(self.call_type) + " , " + str(self.count) +
-                str(self.sum_dur) + "]")
+                " , " + str(self.sum_dur) + "]")
 
     def get_ntk_data(self, cdr, list_call_type):
         '''
@@ -175,20 +175,20 @@ class MsRecord:
                  substr_service_type=None, count=None, sum_dur=None):
         self.index = index
         self. station = station
-        self.cdr_set = cdr_set
+        self.cdr_set_out = cdr_set
         self.substr_service_type = substr_service_type
         self.count = count
         self.sum_dur = sum_dur
 
     def __str__(self):
         return (str(self.index) + " [" + str(self.station) + " , " +
-                str(self.cdr_set) + " , " + str(self.substr_service_type) +
+                str(self.cdr_set_out) + " , " + str(self.substr_service_type) +
                 " , " + str(self.count) + " , " + str(self.sum_dur) + "]")
 
     def get_ms_data(self, cdr, substr_trafic_type):
         list_to_return = []
         for index in range(len(ms_records)):
-            if (ms_records[index].cdr_set == cdr and
+            if (ms_records[index].cdr_set_out == cdr and
                     ms_records[index].substr_service_type
                     in substr_trafic_type):
                 list_to_return.append(
@@ -257,7 +257,7 @@ def check_for_warnings():
                                      traffic_type]))
         if str(list_of_cdr_type[-1]) in set_of_cdr_type:
             error_file = open(log_file_name, "a")
-            print('Warning we find same cdr_set and processing_local',
+            print('Warning we find same cdr_set_out and processing_local',
                   'inside in_result_file with value', list_of_cdr_type[-1],
                   'at lines in_result_file',
                   reserve_list_of_cdr_type_with_comzal.index(
@@ -292,9 +292,9 @@ ms_file_name = os.path.join(os.getcwd(), data_in_folder,
                             "порівняння_мс_нтк_вхід_мс.txt")
 ntk_file_name = os.path.join(os.getcwd(), data_in_folder,
                              "порівняння_мс_нтк_вхід_нтк.txt")
-result_in_file_name = os.path.join(os.getcwd(), data_in_folder,
+result_out_input_file_name = os.path.join(os.getcwd(), data_in_folder,
                                    result_in_file_name_name)
-result_out_file_name = os.path.join(os.getcwd(), data_in_folder,
+result_out_input_file_name = os.path.join(os.getcwd(), data_in_folder,
                                     "result_in_file.txt")
 
 # read ms file
@@ -364,7 +364,7 @@ for record in ntk_records:
     print(record)
 
 # read result_in file
-result_in_file = open(result_in_file_name)
+result_in_file = open(result_out_input_file_name)
 result_in_lines = result_in_file.readlines()
 size_of_result_in_list = len(result_in_lines)
 
@@ -391,7 +391,7 @@ while in_result_in_list_index < size_of_result_in_list:
               f"{line_split} wait for 14 parameters and got",
               f"{len(line_split)}")
         error_file = open(log_file_name, "a")
-        print(f"{datetime.now()} Error in file {result_in_file_name} in line",
+        print(f"{datetime.now()} Error in file {result_out_input_file_name} in line",
               f"from file number {in_result_in_list_index}",
               f"with value {line_split} wait for 14 parameters and got",
               f"{len(line_split)}", file=error_file)
@@ -405,7 +405,7 @@ while in_result_in_list_index < size_of_result_in_list:
 
 
 # start work
-# ['міжмісто, 800, 900', '3275', 'так', 'так', 'так', 'cdr_set in (3275, 3337)'
+# ['міжмісто, 800, 900', '3275', 'так', 'так', 'так', 'cdr_set_out in (3275, 3337)'
 # , '1204', '3226', '32', 'DA_CALLS_LVV', 'IA_IN', '0', '']
 for index in range(len(result_in_records)):
     # comzal
@@ -436,7 +436,7 @@ for index in range(len(result_in_records)):
                     # ms_records[0] 0 because we didn't need exact value
                     list_of_ms_cdrs_data += (ms_records[0].get_ms_data(
                         # second parameter ['1'] we will be check for
-                        # ms_records.cdr in ['1'] or in ['2','3']
+                        # ms_records.substr_service_type in ['1'] or in ['2','3']
                         result_in_records[index].list_of_cdrs[cdr_index],
                         ['1']))
 
@@ -458,7 +458,7 @@ for index in range(len(result_in_records)):
                     continue
 
                 result_in_records[index].trafic_type = 'Місто'
-                # fill second column with all distinct cdrs with data in ms
+                # fill data for second column with all distinct cdrs in ms_cdrs
                 if list_of_ms_cdrs_data:
                     set_of_cdrs_with_data = set()
                     for item in list_of_ms_cdrs_data:
@@ -533,7 +533,7 @@ check_for_warnings()
 #     print(record)
 # ===============================================================================
 
-result_out_file_for_vrntk_in = open(result_out_file_name, "w")
+result_out_file_for_vrntk_in = open(result_out_input_file_name, "w")
 
 for index in range(len(result_in_records)):
     print(str(result_in_records[index].trafic_type) + "\t" +
