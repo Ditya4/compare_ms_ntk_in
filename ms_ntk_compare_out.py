@@ -152,7 +152,10 @@ class ResultRecord:
 
             self.trafic_type = "Error"
             self.ms_cdr = "Error"
-            self.availability = "Error"
+            self.availability = (f"{datetime.now()} Error while converting",
+                                 f"cdrs from",
+                                 f"text to list in line number {self.index}",
+                                 f"with value {self.load_condition}")
             self.conformity = "Error"
             self.dur_conformity = "Error"
             self.list_of_cdrs.append("Error")
@@ -237,34 +240,6 @@ class NtkRecord:
                                            ntk_records[index].out_tg])
 
         return list_to_return
-
-        '''
-        all comments in this method are False
-
-        we will be sent list with one value [2,] if we need local traffic
-        and list with length 2 with value [2, -55] if we need intercity
-        traffic special for using in condition "not in [2,-55]"
-        if len(list_call_type) > 1
-        '''
-        """
-        list_to_return = []
-        if len(list_call_type) == 1:
-            for index in range(len(ntk_records)):
-                if (cdr == ntk_records[index].cdr_set_id and
-                        ntk_records[index].call_type in list_call_type):
-                    list_to_return.append([int(cdr),
-                                           int(ntk_records[index].call_type),
-                                           int(ntk_records[index].sum_dur)])
-        else:  # len(list_call_type) > 1
-            for index in range(len(ntk_records)):
-                if (cdr == ntk_records[index].cdr_set_id and
-                        ntk_records[index].call_type not in list_call_type):
-                    list_to_return.append([int(cdr),
-                                           int(ntk_records[index].call_type),
-                                           int(ntk_records[index].sum_dur)])
-
-        return list_to_return
-        """
 
 
 class MsRecord:
@@ -571,6 +546,93 @@ def fill_empty_fields_in_result_out_records(result_out_records):
                         result_out_records[index].dur_conformity = 'Ні'
 
 
+def check_for_warnings(result_out_records):
+    '''
+    Rising Warnings when in result_out_file are present more than one record
+    with the same cdr and in $load_condition and same $processing_local
+    (-2 or not -2) value we rise a warning to check this situation
+    in future manually
+
+    type of $list_of_cdr_type will be [list_of_cdrs, 2(local)/0(intercity)]
+    and than we will write to $log_file all pairs which has more than one
+    record in this list, to operate them manually.
+    for now lets ignore all comzal records.
+    '''
+    list_of_cdr_type = []
+    reserve_list_of_cdr_type_with_comzal = []
+    set_of_cdr_type = set()
+    for index in range(len(result_out_records)):
+        if result_out_records[index].processing_local in ('2', '1'):
+            traffic_type = '2'
+        else:
+            traffic_type = '0'
+        reserve_list_of_cdr_type_with_comzal.append(
+                    str([result_out_records[index].list_of_cdrs,
+                         traffic_type]))
+        if (result_out_records[index].source_name not in (DO_CALLO_REGION,
+                                                          DO_CALLS_REGION) and
+                'Error' not in str(result_out_records[index])):
+            result_out_records[index].trafic_type = "Error"
+            result_out_records[index].ms_cdr = "Error"
+            result_out_records[index].availability = (
+                                "Error. In result_out_records",
+                                "at index", index, "source_name not in (",
+                                DO_CALLO_REGION, ",", DO_CALLS_REGION, ")")
+            result_out_records[index].conformity = "Error"
+            result_out_records[index].dur_conformity = "Error"
+        else:
+            list_of_cdr_type.append(
+                                str([result_out_records[index].list_of_cdrs,
+                                     traffic_type]))
+            if str(list_of_cdr_type[-1]) in set_of_cdr_type:
+                error_file = open(log_file_name, "a")
+                print('Warning we found same cdr_set_out and processing_local',
+                      'inside out_result_file with value',
+                      list_of_cdr_type[-1],
+                      'at lines out_result_file',
+                      reserve_list_of_cdr_type_with_comzal.index(
+                          str(list_of_cdr_type[-1])),
+                      'and', index, file=error_file)
+                error_file.close()
+                result_out_records[index].availability = (
+                        'Warning we found same cdr_set_out and',
+                        'processing_local',
+                        'inside out_result_file with value',
+                        list_of_cdr_type[-1],
+                        'at lines out_result_file',
+                        reserve_list_of_cdr_type_with_comzal.index(
+                            str(list_of_cdr_type[-1])),
+                        'and', index)
+                result_out_records[index].conformity = 'Warning'
+            else:
+                set_of_cdr_type.add(list_of_cdr_type[-1])
+            print(index, list_of_cdr_type[-1])
+
+
+def export_data_into_file(result_out_records, result_out_output_file_name):
+    result_out_file = open(result_out_output_file_name, "w")
+
+    for index in range(len(result_out_records)):
+        print(str(result_out_records[index].trafic_type) + "\t" +
+              str(result_out_records[index].ms_cdr) + "\t" +
+              str(result_out_records[index].availability) + "\t" +
+              str(result_out_records[index].conformity) + "\t" +
+              str(result_out_records[index].dur_conformity) + "\t" +
+              str(result_out_records[index].load_condition) + "\t" +
+              str(result_out_records[index].operator_id) + "\t" +
+              str(result_out_records[index].account_number) + "\t" +
+              str(result_out_records[index].region) + "\t" +
+              str(result_out_records[index].source_name) + "\t" +
+              str(result_out_records[index].io) + "\t" +
+              str(result_out_records[index].operators_name) + "\t" +
+              str(result_out_records[index].recipient_id) + "\t" +
+              str(result_out_records[index].processing_local) + "\t" +
+              str(result_out_records[index].description) + "\t" +
+              str(result_out_records[index].more_info),
+              file=result_out_file)
+    result_out_file.close()
+
+
 # main()
 
 data_in_folder = "ms_ntk_compare_lvv_out"
@@ -586,16 +648,9 @@ result_out_input_file_name = os.path.join(os.getcwd(), data_in_folder,
 ntk_file_name = os.path.join(os.getcwd(), data_in_folder, NTK_FILE_NAME_NAME)
 ms_file_name = os.path.join(os.getcwd(), data_in_folder, MS_FILE_NAME_NAME)
 log_file_name = os.path.join(os.getcwd(), data_in_folder, ERROR_LOG_FILE_NAME)
+result_out_output_file_name = os.path.join(os.getcwd(), data_in_folder,
+                                           "result_out_file_export.txt")
 
-'''
-ms_file_name = os.path.join(os.getcwd(), data_in_folder,
-                            "порівняння_мс_нтк_вхід_мс.txt")
-ntk_file_name = os.path.join(os.getcwd(), data_in_folder,
-                             "порівняння_мс_нтк_вхід_нтк.txt")
-
-# result_out_input_file_name = os.path.join(os.getcwd(), data_in_folder,
-#                                    "result_out_file.txt")
-'''
 result_out_records = read_result_out_file(result_out_input_file_name)
 for record in result_out_records:
     print(record)
@@ -611,3 +666,7 @@ for record in ms_records:
 fill_empty_fields_in_result_out_records(result_out_records)
 for record in result_out_records:
     print(record)
+
+check_for_warnings(result_out_records)
+
+export_data_into_file(result_out_records, result_out_output_file_name)
