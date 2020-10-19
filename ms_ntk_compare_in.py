@@ -250,8 +250,8 @@ def check_for_warnings():
             traffic_type = '0'
         reserve_list_of_cdr_type_with_comzal.append(
                     str([result_in_records[index].list_of_cdrs, traffic_type]))
-        if result_in_records[index].source_name not in ('DA_CALLS_LVV',
-                                                        'DO_CALLS_LVV'):
+        if result_in_records[index].source_name not in (da_calls_region,
+                                                        da_callo_region):
             continue
         list_of_cdr_type.append(str([result_in_records[index].list_of_cdrs,
                                      traffic_type]))
@@ -275,23 +275,30 @@ def check_for_warnings():
 # main()
 # Swich to Lviv
 # ===============================================================================
-# data_in_folder = "ms_ntk_compare_lvv_in"
-# result_in_file_name_name = "lviv_in_all_4_12.10.txt"
-# da_callo_region = 'DA_CALLO_LVV'
-# da_calls_region = 'DA_CALLS_LVV'
+data_in_folder = "ms_ntk_compare_lvv_in"
+result_in_file_name_name = "lviv in result file.txt"
+da_callo_region = 'DA_CALLO_LVV'
+da_calls_region = 'DA_CALLS_LVV'
+ms_in_file_name_name = 'lviv ms in.txt'
+ntk_in_file_name_name = 'lviv ntk in.txt'
 # ===============================================================================
+
 # Swich to Uzhorod
 
-result_in_file_name_name = "result_in_file_uzh.txt"
-data_in_folder = "ms_ntk_compare_uzh_in"
-da_callo_region = 'DA_CALLO_UZH'
-da_calls_region = 'DA_CALLS_UZH'
+#===============================================================================
+# result_in_file_name_name = "result_in_file_uzh.txt"
+# data_in_folder = "ms_ntk_compare_uzh_in"
+# da_callo_region = 'DA_CALLO_UZH'
+# da_calls_region = 'DA_CALLS_UZH'
+# ms_in_file_name_name = 'uzh ms in.txt'
+# ntk_in_file_name_name = 'uzh ntk in.txt'
+#===============================================================================
 
 log_file_name = os.path.join(os.getcwd(), data_in_folder, "error_log.txt")
 ms_file_name = os.path.join(os.getcwd(), data_in_folder,
-                            "порівняння_мс_нтк_вхід_мс.txt")
+                            ms_in_file_name_name)
 ntk_file_name = os.path.join(os.getcwd(), data_in_folder,
-                             "порівняння_мс_нтк_вхід_нтк.txt")
+                             ntk_in_file_name_name)
 result_in_file_name = os.path.join(os.getcwd(), data_in_folder,
                                    result_in_file_name_name)
 result_out_file_name = os.path.join(os.getcwd(), data_in_folder,
@@ -380,20 +387,20 @@ while in_result_in_list_index < size_of_result_in_list:
     if line_split[-1] == '\n':
         line_split.pop()
     print(in_result_in_list_index, "line_split =", line_split)
-    if len(line_split) == 14:
+    if len(line_split) == 15:
         result_in_records[out_result_in_list_index] = ResultRecord(
                                                 out_result_in_list_index,
                                                 *line_split)
         in_result_in_list_index += 1
         out_result_in_list_index += 1
     else:
-        print(f"Error in line from file number {in_ntk_list_index} with value",
-              f"{line_split} wait for 14 parameters and got",
+        print(f"Error in line from file number {result_in_file_name} with value",
+              f"{line_split} wait for 15 parameters and got",
               f"{len(line_split)}")
         error_file = open(log_file_name, "a")
         print(f"{datetime.now()} Error in file {result_in_file_name} in line",
               f"from file number {in_result_in_list_index}",
-              f"with value {line_split} wait for 14 parameters and got",
+              f"with value {line_split} wait for 15 parameters and got",
               f"{len(line_split)}", file=error_file)
         error_file.close()
         size_of_result_in_list -= 1
