@@ -639,14 +639,41 @@ def export_data_into_file(result_out_records, result_out_output_file_name):
 
 # main()
 
-data_in_folder = "ms_ntk_compare_lvv_out"
-RESULT_OUT_FILE_NAME_NAME = "lviv out result file.txt"
-NTK_FILE_NAME_NAME = "lviv ntk_out.txt"
-MS_FILE_NAME_NAME = "lviv ms out.txt"
-ERROR_LOG_FILE_NAME = "error_log.txt"
-DO_CALLS_REGION = 'DO_CALLS_LVV'
-DO_CALLO_REGION = 'DO_CALLO_LVV'
+# L'viv
 
+#===============================================================================
+# data_in_folder = "ms_ntk_compare_lvv_out"
+# RESULT_OUT_FILE_NAME_NAME = "lviv out result file.txt"
+# NTK_FILE_NAME_NAME = "lviv ntk_out.txt"
+# MS_FILE_NAME_NAME = "lviv ms out.txt"
+# DO_CALLS_REGION = 'DO_CALLS_LVV'
+# DO_CALLO_REGION = 'DO_CALLO_LVV'
+#===============================================================================
+
+#Luts'k
+
+#===============================================================================
+# data_in_folder = "ms_ntk_compare_lut_out"
+# RESULT_OUT_FILE_NAME_NAME = "lut result out.txt"
+# NTK_FILE_NAME_NAME = "ntk lut vuhid.txt"
+# MS_FILE_NAME_NAME = "ms lut vuhid.txt"
+# DO_CALLS_REGION = 'DO_CALLS_LUT'
+# DO_CALLO_REGION = 'DO_CALLO_LUT'
+#===============================================================================
+
+# Frankivs'k
+
+data_in_folder = "ms_ntk_compare_ivf_out"
+RESULT_OUT_FILE_NAME_NAME = "ivf_result_out.txt"
+NTK_FILE_NAME_NAME = "ivf_ntk_vuhid.txt"
+MS_FILE_NAME_NAME = "ivf_ms_vuhid.txt"
+DO_CALLS_REGION = 'DO_CALLS_IVF'
+DO_CALLO_REGION = 'DO_CALLO_IVF'
+
+
+
+
+ERROR_LOG_FILE_NAME = "error_log.txt"
 result_out_input_file_name = os.path.join(os.getcwd(), data_in_folder,
                                           RESULT_OUT_FILE_NAME_NAME)
 ntk_file_name = os.path.join(os.getcwd(), data_in_folder, NTK_FILE_NAME_NAME)
