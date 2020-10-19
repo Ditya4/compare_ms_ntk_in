@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 '''
+
 перед розділенням вхідного результуючого файлу на вхід і вихід в якійсь із
 останніх колонок я прописую цифри від 1 до упору, потім файл ділиться на
 вхід і вихід, обробляється окремо і зливається в 1 файл, який сотрується
@@ -92,7 +93,7 @@ class ResultRecord:
     def get_list_of_cdrs(self):
         cdr = self.load_condition
         # print(cdr)
-        if 'cdr_set=' in cdr or 'cdr_set =' in cdr:
+        if 'cdr_set=' in cdr or 'cdr_set =' in cdr or 'cdr_set  =' in cdr:
             # print('bingo')
             cdr_to_add = (
                 [self.load_condition[self.load_condition.find('=')
@@ -121,6 +122,16 @@ class ResultRecord:
                   f"text to list in line number {self.index}",
                   f"with value {self.load_condition}", file=error_file)
             error_file.close()
+            self.trafic_type = "Error"
+            self.ms_cdr = "Error"
+            self.availability = (f"{datetime.now()} Error while converting",
+                                 f"cdrs from",
+                                 f"text to list in line number {self.index}",
+                                 f"with value {self.load_condition}")
+            self.conformity = "Error"
+            self.dur_conformity = "Error"
+            self.list_of_cdrs.append("Error")
+            return
 
         for index in range(len(cdr_to_add)):
             self.list_of_cdrs.append(cdr_to_add[index])
@@ -274,14 +285,34 @@ def check_for_warnings():
 
 # main()
 # Swich to Lviv
-# ===============================================================================
-data_in_folder = "ms_ntk_compare_lvv_in"
-result_in_file_name_name = "lviv in result file.txt"
-da_callo_region = 'DA_CALLO_LVV'
-da_calls_region = 'DA_CALLS_LVV'
-ms_in_file_name_name = 'lviv ms in.txt'
-ntk_in_file_name_name = 'lviv ntk in.txt'
-# ===============================================================================
+
+#===============================================================================
+# data_in_folder = "ms_ntk_compare_lvv_in"
+# result_in_file_name_name = "lviv in result file.txt"
+# da_callo_region = 'DA_CALLO_LVV'
+# da_calls_region = 'DA_CALLS_LVV'
+# ms_in_file_name_name = 'lviv ms in.txt'
+# ntk_in_file_name_name = 'lviv ntk in.txt'
+#===============================================================================
+# Switch to Luts'k
+#===============================================================================
+# data_in_folder = "ms_ntk_compare_lut_in"
+# result_in_file_name_name = "lut result in.txt"
+# da_callo_region = 'DA_CALLO_LUT'
+# da_calls_region = 'DA_CALLS_LUT'
+# ms_in_file_name_name = 'ms lut vhid.txt'
+# ntk_in_file_name_name = 'ntk lut vhid.txt'
+#===============================================================================
+
+# Switch to Frankivs'k
+
+data_in_folder = "ms_ntk_compare_ivf_in"
+result_in_file_name_name = "ivf_result_in.txt"
+da_callo_region = 'DA_CALLO_IVF'
+da_calls_region = 'DA_CALLS_IVF'
+ms_in_file_name_name = 'ivf_ms_vhid.txt'
+ntk_in_file_name_name = 'ivf_ntk_vhid.txt'
+
 
 # Swich to Uzhorod
 
@@ -302,7 +333,7 @@ ntk_file_name = os.path.join(os.getcwd(), data_in_folder,
 result_in_file_name = os.path.join(os.getcwd(), data_in_folder,
                                    result_in_file_name_name)
 result_out_file_name = os.path.join(os.getcwd(), data_in_folder,
-                                    "result_in_file.txt")
+                                    "result_in_file_export.txt")
 
 # read ms file
 ms_file = open(ms_file_name, "r")
@@ -415,6 +446,10 @@ while in_result_in_list_index < size_of_result_in_list:
 # ['міжмісто, 800, 900', '3275', 'так', 'так', 'так', 'cdr_set in (3275, 3337)'
 # , '1204', '3226', '32', 'DA_CALLS_LVV', 'IA_IN', '0', '']
 for index in range(len(result_in_records)):
+    # error
+    if 'Error' in str(result_in_records[index]):
+        print('Error')
+        continue
     # comzal
     if (result_in_records[index].io == 'IA_IN' and
             result_in_records[index].source_name == da_callo_region):
@@ -535,10 +570,10 @@ value we rise an warning to check this situation manually
 '''
 check_for_warnings()
 
-# ===============================================================================
-# for record in result_in_records:
-#     print(record)
-# ===============================================================================
+
+for record in result_in_records:
+    print(record)
+
 
 result_out_file_for_vrntk_in = open(result_out_file_name, "w")
 
