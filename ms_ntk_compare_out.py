@@ -302,7 +302,7 @@ def read_result_out_file(result_out_input_file_name):
         if line_split[-1] == '\n':
             line_split.pop()
         print(in_result_out_list_index, "line_split =", line_split)
-        if len(line_split) == 14:
+        if len(line_split) == 15:
             result_out_records[out_result_out_list_index] = ResultRecord(
                                                     out_result_out_list_index,
                                                     *line_split)
@@ -310,11 +310,15 @@ def read_result_out_file(result_out_input_file_name):
             in_result_out_list_index += 1
             out_result_out_list_index += 1
         else:
+            print(f"Error in line from file number",
+                  f"{result_out_input_file_name} with value",
+                  f"{line_split} wait for 15 parameters and got",
+                  f"{len(line_split)}")
             error_file = open(log_file_name, "a")
             print(f"{datetime.now()} Error in file",
                   f"{result_out_input_file_name}",
                   f"in line from file number {in_result_out_list_index}",
-                  f"with value {line_split} wait for 14 parameters and got",
+                  f"with value {line_split} wait for 15 parameters and got",
                   f"{len(line_split)}", file=error_file)
             error_file.close()
             size_of_result_out_list -= 1
@@ -636,9 +640,9 @@ def export_data_into_file(result_out_records, result_out_output_file_name):
 # main()
 
 data_in_folder = "ms_ntk_compare_lvv_out"
-RESULT_OUT_FILE_NAME_NAME = "result_out_file_lviv.txt"
-NTK_FILE_NAME_NAME = "порівняня мс інтраконект тут нтк львів вихід.txt"
-MS_FILE_NAME_NAME = "порівняня мс інтраконект тут мс львів вихід.txt"
+RESULT_OUT_FILE_NAME_NAME = "lviv out result file.txt"
+NTK_FILE_NAME_NAME = "lviv ntk_out.txt"
+MS_FILE_NAME_NAME = "lviv ms out.txt"
 ERROR_LOG_FILE_NAME = "error_log.txt"
 DO_CALLS_REGION = 'DO_CALLS_LVV'
 DO_CALLO_REGION = 'DO_CALLO_LVV'
